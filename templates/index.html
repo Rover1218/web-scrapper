@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraping Tool</title>
+    <link rel="icon" href="{{ url_for('static', filename='web-scraper.png') }}?v=1" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'gradient': 'gradient 8s linear infinite',
+                        'slide-down': 'slide-down 0.5s ease-out',
+                        'fade-in': 'fade-in 0.3s ease-in',
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            },
+                        },
+                        'slide-down': {
+                            '0%': { transform: 'translateY(-10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        'fade-in': {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Replace @apply with direct class names */
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, var(--tw-gradient-stops));
+            --tw-gradient-from: #9333ea;
+            --tw-gradient-via: #ec4899;
+            --tw-gradient-to: #818cf8;
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to);
+            animation: gradient 8s linear infinite;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* Add smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Enhanced animations */
+        .animate-fade-up {
+            animation: fade-up 0.5s ease-out forwards;
+        }
+
+        @keyframes fade-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Fix loading spinner without @apply */
+        .loading-spinner {
+            width: 2rem;
+            height: 2rem;
+            border-width: 4px;
+            border-color: #9333ea;
+            border-top-color: transparent;
+            border-radius: 9999px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Add transition for tab panels */
+        .tab-panel {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .tab-panel.active {
+            animation: slide-in 0.3s ease-out forwards;
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .tab-content {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease-out;
+        }
+
+        .tab-content.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Fix search icon position */
+        .search-container {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .search-input {
+            padding-left: 3rem !important;
+        }
+
+        /* Custom Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(31, 41, 55, 0.5);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #9333ea, #ec4899);
+            border-radius: 10px;
+            border: 3px solid rgba(31, 41, 55, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(45deg, #7e22ce, #db2777);
+        }
+
+        /* Horizontal scrollbar styles */
+        ::-webkit-scrollbar-horizontal {
+            height: 12px;
+        }
+
+        /* Firefox scrollbar styles */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #9333ea rgba(31, 41, 55, 0.5);
+        }
+
+        /* Smooth scrolling for the entire page and containers */
+        html,
+        body,
+        .overflow-x-auto,
+        .overflow-y-auto {
+            scroll-behavior: smooth;
+        }
+
+        /* Update scrollable container styles */
+        .overflow-x-auto,
+        .overflow-y-auto {
+            /* Remove the mask-image that was causing the fade effect */
+            mask-image: none;
+            -webkit-mask-image: none;
+        }
+
+        /* Add smooth shadow indicators for scroll instead of fade */
+        .overflow-x-auto {
+            background: linear-gradient(to right, rgba(17, 24, 39, 0.1) 0%, transparent 5%, transparent 95%, rgba(17, 24, 39, 0.1) 100%);
+        }
+
+        /* Ensure content is fully visible */
+        .overflow-x-auto>* {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        /* Custom Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(31, 41, 55, 0.5);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #9333ea, #ec4899);
+            border-radius: 10px;
+            border: 3px solid rgba(31, 41, 55, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(45deg, #7e22ce, #db2777);
+        }
+
+        /* Ensure table content is fully visible */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        td:first-child,
+        th:first-child {
+            padding-left: 1.5rem;
+        }
+    </style>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen text-gray-100">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Hero Section -->
+        <div class="text-center mb-12 animate-slide-down">
+            <h1 class="text-5xl font-extrabold mb-4">
+                <span class="gradient-text">Web Scraping Tool</span>
+            </h1>
+            <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                Extract valuable information from any website with our powerful scraping tool
+            </p>
+        </div>
+
+        <!-- Enhanced URL Input Form with fixed icon positioning -->
+        <form method="POST"
+            class="max-w-4xl mx-auto mb-12 transform hover:scale-[1.01] transition-transform duration-300">
+            <div class="bg-gray-800/50 p-8 rounded-2xl shadow-xl backdrop-blur-sm border border-gray-700">
+                <div class="flex flex-col md:flex-row gap-4 items-stretch">
+                    <div class="flex-1 relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fas fa-globe text-purple-400"></i>
+                        </div>
+                        <input type="text" id="url" name="url" value="{{ url }}"
+                            class="w-full pl-12 pr-4 py-4 bg-gray-900/50 rounded-xl border border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-300"
+                            placeholder="Enter website URL (e.g., https://example.com)" required>
+                    </div>
+                    <button type="submit"
+                        class="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-white font-medium hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-purple-500/25 min-w-[120px]">
+                        <i class="fas fa-search mr-2"></i>Scrape
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if error %}
+        <div class="max-w-3xl mx-auto animate-fade-in">
+            <div class="bg-red-900/50 border-l-4 border-red-500 p-4 rounded-lg backdrop-blur-sm">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-400 text-xl mr-3"></i>
+                    <p class="text-red-100">{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if data %}
+        <!-- Enhanced Results Section -->
+        <div x-data="{ 
+            activeTab: 'links',
+            loading: false,
+            async switchTab(tab) {
+                this.loading = true;
+                this.activeTab = tab;
+                await new Promise(r => setTimeout(r, 100));
+                this.loading = false;
+            }
+        }" class="animate-fade-in space-y-6">
+            <div class="bg-gray-800/50 rounded-2xl shadow-xl p-8 backdrop-blur-sm border border-gray-700">
+                <!-- Result Header -->
+                <div class="space-y-4 mb-8">
+                    <h2 class="text-2xl font-bold flex items-center">
+                        <i class="fas fa-globe text-purple-400 mr-3"></i>
+                        <span class="gradient-text">Results for: {{ url }}</span>
+                    </h2>
+                    {% if page_title %}
+                    <p class="text-lg text-gray-300 pl-8">
+                        <i class="fas fa-heading mr-2 text-purple-400"></i>{{ page_title }}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Fixed Search Box -->
+                <div class="relative mb-8">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon text-gray-400"></i>
+                        <input type="text" id="searchBox" onkeyup="filterContent()"
+                            class="search-input w-full px-6 py-4 bg-gray-900/50 rounded-xl border border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-300"
+                            placeholder="Search in results...">
+                    </div>
+                </div>
+
+                <!-- Enhanced Tabs Navigation -->
+                <div class="flex flex-wrap gap-3 mb-8 overflow-x-auto pb-2">
+                    <template
+                        x-for="tab in ['Links', 'Images', 'Headings', 'Meta', 'Social', 'Forms', 'Contact', 'Sources', 'SEO', 'Security', 'Performance', 'Accessibility', 'Structured Data', 'Text Content', 'Media']">
+                        <button @click="switchTab(tab.toLowerCase().replace(' ', '-'))" :class="{
+                                'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105': activeTab === tab.toLowerCase().replace(' ', '-'),
+                                'bg-gray-700 text-gray-300 hover:bg-gray-600': activeTab !== tab.toLowerCase().replace(' ', '-')
+                            }"
+                            class="px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-purple-500/20">
+                            <span x-text="tab"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div x-show="loading" class="flex justify-center p-12">
+                    <div class="loading-spinner"></div>
+                </div>
+
+                <!-- Enhanced Content Sections -->
+                <div x-show="!loading" class="space-y-4">
+                    <!-- Links Tab -->
+                    <div x-show="activeTab === 'links'" class="tab-content"
+                        :class="{ 'active': activeTab === 'links' }">
+                        <div class="overflow-x-auto rounded-lg border border-gray-700">
+                            <table class="min-w-full divide-y divide-gray-700">
+                                <thead class="bg-gray-900/50">
+                                    <tr>
+                                        <th
+                                            class="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                            Title</th>
+                                        <th
+                                            class="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                            URL</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-gray-800/50 divide-y divide-gray-700">
+                                    {% for link in data.links %}
+                                    <tr class="searchable hover:bg-gray-700/50 transition-colors duration-200">
+                                        <td class="px-6 py-4 whitespace-normal break-words text-gray-300">{{ link.title
+                                            }}</td>
+                                        <td class="px-6 py-4 whitespace-normal break-words">
+                                            <a href="{{ link.url }}" target="_blank"
+                                                class="text-purple-400 hover:text-purple-300 hover:underline">{{
+                                                link.url }}</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Images Tab -->
+                    <div x-show="activeTab === 'images'" class="tab-content"
+                        :class="{ 'active': activeTab === 'images' }">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {% for img in data.images %}
+                            <div
+                                class="searchable bg-gray-800/50 rounded-lg p-4 hover:bg-gray-700/50 transition-colors duration-200">
+                                <img src="{{ img.src }}" alt="{{ img.alt }}"
+                                    class="w-full h-48 object-cover rounded-lg mb-2">
+                                <p class="text-gray-300 text-sm">{{ img.alt }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Headings Tab -->
+                    <div x-show="activeTab === 'headings'" class="tab-content"
+                        :class="{ 'active': activeTab === 'headings' }">
+                        <div class="space-y-4">
+                            {% for heading in data.headings %}
+                            <div class="searchable bg-gray-800/50 p-4 rounded-lg">
+                                <div class="text-sm text-purple-400 mb-1">H{{ heading.level }}</div>
+                                <div class="text-gray-200">{{ heading.text }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Meta Tab -->
+                    <div x-show="activeTab === 'meta'" class="tab-content" :class="{ 'active': activeTab === 'meta' }">
+                        <div class="grid gap-4">
+                            {% for meta in data.meta %}
+                            <div class="searchable bg-gray-800/50 p-4 rounded-lg">
+                                <div class="text-sm text-purple-400 mb-1">{{ meta.name }}</div>
+                                <div class="text-gray-200">{{ meta.content }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Social Tab -->
+                    <div x-show="activeTab === 'social'" class="tab-content"
+                        :class="{ 'active': activeTab === 'social' }">
+                        <div class="grid gap-4">
+                            {% for social in data.social_media %}
+                            <div class="searchable bg-gray-800/50 p-4 rounded-lg flex items-center">
+                                <i class="fab fa-{{ social.platform }} text-2xl text-purple-400 mr-4"></i>
+                                <a href="{{ social.url }}" target="_blank"
+                                    class="text-gray-200 hover:text-purple-400">{{ social.url }}</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Forms Tab -->
+                    <div x-show="activeTab === 'forms'" class="tab-content"
+                        :class="{ 'active': activeTab === 'forms' }">
+                        {% if data.forms %}
+                        {% for form in data.forms %}
+                        <div class="searchable bg-gray-800/50 p-4 rounded-lg mb-4">
+                            <div class="text-purple-400 mb-2">Form Action: {{ form.action }}</div>
+                            <div class="text-gray-300 mb-2">Method: {{ form.method|upper }}</div>
+                            <div class="grid gap-2">
+                                {% for input in form.inputs %}
+                                <div class="bg-gray-700/50 p-2 rounded">
+                                    <span class="text-purple-300">{{ input.type }}</span>
+                                    {% if input.name %}<span class="text-gray-400 ml-2">name: {{ input.name }}</span>{%
+                                    endif %}
+                                    {% if input.id %}<span class="text-gray-400 ml-2">id: {{ input.id }}</span>{% endif
+                                    %}
+                                    {% if input.placeholder %}<span class="text-gray-400 ml-2">placeholder: {{
+                                        input.placeholder }}</span>{% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p class="text-gray-400">No forms found on this page.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Contact Tab -->
+                    <div x-show="activeTab === 'contact'" class="tab-content"
+                        :class="{ 'active': activeTab === 'contact' }">
+                        <div class="grid gap-4">
+                            {% if data.phones %}
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">Phone Numbers</h3>
+                                {% for phone in data.phones %}
+                                <div class="searchable text-gray-200 mb-2">{{ phone }}</div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-gray-400">No phone numbers found.</p>
+                            {% endif %}
+                            {% if data.emails %}
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">Email Addresses</h3>
+                                {% for email in data.emails %}
+                                <div class="searchable text-gray-200 mb-2">{{ email }}</div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-gray-400">No email addresses found.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Sources Tab -->
+                    <div x-show="activeTab === 'sources'" class="tab-content"
+                        :class="{ 'active': activeTab === 'sources' }">
+                        <div class="space-y-6">
+                            <!-- Scripts Section -->
+                            <div class="bg-gray-800/50 rounded-lg p-6">
+                                <h3 class="text-xl font-semibold text-purple-400 mb-4 flex items-center">
+                                    <i class="fas fa-code mr-2"></i> Scripts
+                                    <span class="text-sm font-normal text-gray-400 ml-2">({{ data.sources.scripts|length
+                                        }})</span>
+                                </h3>
+                                <div class="space-y-3">
+                                    {% for script in data.sources.scripts %}
+                                    <div
+                                        class="searchable bg-gray-700/50 p-3 rounded-lg hover:bg-gray-600/50 transition-colors">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <a href="{{ script.src }}" target="_blank"
+                                                    class="text-purple-300 hover:text-purple-200 hover:underline break-all">
+                                                    {{ script.src }}
+                                                </a>
+                                                <div class="flex gap-2 mt-2">
+                                                    {% if script.async %}
+                                                    <span
+                                                        class="px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded">async</span>
+                                                    {% endif %}
+                                                    {% if script.defer %}
+                                                    <span
+                                                        class="px-2 py-1 text-xs bg-blue-500/20 text-blue-300 rounded">defer</span>
+                                                    {% endif %}
+                                                    <span
+                                                        class="px-2 py-1 text-xs bg-gray-500/20 text-gray-300 rounded">{{
+                                                        script.type }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Styles Section -->
+                            <div class="bg-gray-800/50 rounded-lg p-6">
+                                <h3 class="text-xl font-semibold text-purple-400 mb-4 flex items-center">
+                                    <i class="fas fa-palette mr-2"></i> Stylesheets
+                                    <span class="text-sm font-normal text-gray-400 ml-2">({{ data.sources.styles|length
+                                        }})</span>
+                                </h3>
+                                <div class="space-y-3">
+                                    {% for style in data.sources.styles %}
+                                    <div
+                                        class="searchable bg-gray-700/50 p-3 rounded-lg hover:bg-gray-600/50 transition-colors">
+                                        <a href="{{ style.href }}" target="_blank"
+                                            class="text-purple-300 hover:text-purple-200 hover:underline break-all">
+                                            {{ style.href }}
+                                        </a>
+                                        <div class="flex gap-2 mt-2">
+                                            <span class="px-2 py-1 text-xs bg-gray-500/20 text-gray-300 rounded">{{
+                                                style.media }}</span>
+                                            <span class="px-2 py-1 text-xs bg-gray-500/20 text-gray-300 rounded">{{
+                                                style.type }}</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Analytics Section -->
+                            {% if data.sources.analytics %}
+                            <div class="bg-gray-800/50 rounded-lg p-6">
+                                <h3 class="text-xl font-semibold text-purple-400 mb-4 flex items-center">
+                                    <i class="fas fa-chart-line mr-2"></i> Analytics & Tracking
+                                    <span class="text-sm font-normal text-gray-400 ml-2">({{
+                                        data.sources.analytics|length }})</span>
+                                </h3>
+                                <div class="space-y-3">
+                                    {% for script in data.sources.analytics %}
+                                    <div
+                                        class="searchable bg-gray-700/50 p-3 rounded-lg hover:bg-gray-600/50 transition-colors">
+                                        <a href="{{ script.src }}" target="_blank"
+                                            class="text-purple-300 hover:text-purple-200 hover:underline break-all">
+                                            {{ script.src }}
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Iframes Section -->
+                            {% if data.sources.iframes %}
+                            <div class="bg-gray-800/50 rounded-lg p-6">
+                                <h3 class="text-xl font-semibold text-purple-400 mb-4 flex items-center">
+                                    <i class="fas fa-window-maximize mr-2"></i> Embedded Content
+                                    <span class="text-sm font-normal text-gray-400 ml-2">({{ data.sources.iframes|length
+                                        }})</span>
+                                </h3>
+                                <div class="space-y-3">
+                                    {% for iframe in data.sources.iframes %}
+                                    <div
+                                        class="searchable bg-gray-700/50 p-3 rounded-lg hover:bg-gray-600/50 transition-colors">
+                                        <div class="font-medium text-gray-200 mb-1">{{ iframe.title or "Untitled iframe"
+                                            }}</div>
+                                        <a href="{{ iframe.src }}" target="_blank"
+                                            class="text-purple-300 hover:text-purple-200 hover:underline break-all">
+                                            {{ iframe.src }}
+                                        </a>
+                                        <div class="text-sm text-gray-400 mt-1">
+                                            Dimensions: {{ iframe.width }} × {{ iframe.height }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- SEO Tab -->
+                    <div x-show="activeTab === 'seo'" class="tab-content" :class="{ 'active': activeTab === 'seo' }">
+                        <div class="space-y-4">
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">SEO Data</h3>
+                                <p><strong>Title:</strong> {{ data.seo_data.title }}</p>
+                                <p><strong>Description:</strong> {{ data.seo_data.meta_description }}</p>
+                                <p><strong>Keywords:</strong> {{ data.seo_data.meta_keywords | join(', ') }}</p>
+                                <p><strong>Canonical URL:</strong> {{ data.seo_data.canonical }}</p>
+                                <p><strong>Language:</strong> {{ data.seo_data.language }}</p>
+                                <!-- ...display other SEO data... -->
+                            </div>
+                            <!-- Open Graph Tags -->
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">Open Graph Tags</h3>
+                                {% for key, value in data.seo_data.og_tags.items() %}
+                                <p><strong>{{ key }}:</strong> {{ value }}</p>
+                                {% endfor %}
+                            </div>
+                            <!-- Twitter Cards -->
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">Twitter Cards</h3>
+                                {% for key, value in data.seo_data.twitter_cards.items() %}
+                                <p><strong>{{ key }}:</strong> {{ value }}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Tab -->
+                    <div x-show="activeTab === 'security'" class="tab-content"
+                        :class="{ 'active': activeTab === 'security' }">
+                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                            <h3 class="text-purple-400 mb-2">Security Headers</h3>
+                            <p><strong>Content-Security-Policy:</strong> {{ data.security.csp }}</p>
+                            <p><strong>Strict-Transport-Security:</strong> {{ data.security.hsts }}</p>
+                            <p><strong>X-Content-Type-Options:</strong> {{ data.security.x_content_type_options }}</p>
+                            <p><strong>X-Frame-Options:</strong> {{ data.security.x_frame_options }}</p>
+                            <p><strong>X-XSS-Protection:</strong> {{ data.security.x_xss_protection }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Accessibility Tab -->
+                    <div x-show="activeTab === 'accessibility'" class="tab-content"
+                        :class="{ 'active': activeTab === 'accessibility' }">
+                        <div class="space-y-4">
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">ARIA Labels</h3>
+                                {% for label in data.accessibility.aria_labels %}
+                                <p>{{ label }}</p>
+                                {% endfor %}
+                            </div>
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">Missing Alt Texts in Images</h3>
+                                {% for src in data.accessibility.alt_texts_missing %}
+                                <p>{{ src }}</p>
+                                {% endfor %}
+                            </div>
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">Missing Form Labels</h3>
+                                {% for name in data.accessibility.form_labels_missing %}
+                                <p>{{ name }}</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Structured Data Tab -->
+                    <div x-show="activeTab === 'structured-data'" class="tab-content"
+                        :class="{ 'active': activeTab === 'structured-data' }">
+                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                            <h3 class="text-purple-400 mb-2">Structured Data (JSON-LD)</h3>
+                            {% for item in data.structured_data %}
+                            <pre class="bg-gray-900 p-4 rounded">{{ item | tojson(indent=2) }}</pre>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Text Content Tab -->
+                    <div x-show="activeTab === 'text-content'" class="tab-content"
+                        :class="{ 'active': activeTab === 'text-content' }">
+                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                            <h3 class="text-purple-400 mb-2">Paragraphs</h3>
+                            {% for paragraph in data.text_content.paragraphs %}
+                            <p class="mb-2">{{ paragraph }}</p>
+                            {% endfor %}
+                        </div>
+                        <!-- ...display lists and code blocks... -->
+                    </div>
+
+                    <!-- Media Tab -->
+                    <div x-show="activeTab === 'media'" class="tab-content"
+                        :class="{ 'active': activeTab === 'media' }">
+                        <div class="space-y-4">
+                            <!-- Videos -->
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">Videos</h3>
+                                {% for video in data.media.videos %}
+                                <div class="mb-4">
+                                    <video controls src="{{ video.src }}" class="w-full h-auto"></video>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <!-- Audios -->
+                            <div class="bg-gray-800/50 p-4 rounded-lg">
+                                <h3 class="text-purple-400 mb-2">Audio</h3>
+                                {% for audio in data.media.audios %}
+                                <div class="mb-4">
+                                    <audio controls src="{{ audio.src }}" class="w-full"></audio>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Tab -->
+                    <div x-show="activeTab === 'performance'" class="tab-content"
+                        :class="{ 'active': activeTab === 'performance' }">
+                        <div class="bg-gray-800/50 p-4 rounded-lg">
+                            <h3 class="text-purple-400 mb-2">Performance Metrics</h3>
+                            <p><strong>Total Requests:</strong> {{ data.performance.total_requests }}</p>
+                            <p><strong>Total Size:</strong> {{ data.performance.total_size_kb }} KB</p>
+                            <!-- ...display other performance metrics... -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    </div>
+
+    <script>
+        // Enhanced tab switching with loading state
+        function openTab(evt, tabName) {
+            evt.preventDefault();
+
+            const tabcontents = document.getElementsByClassName("tab-content");
+            const tablinks = document.getElementsByClassName("tab-button");
+
+            // Show loading state
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'loading-spinner mx-auto';
+            evt.currentTarget.appendChild(loadingIndicator);
+
+            setTimeout(() => {
+                Array.from(tabcontents).forEach(tab => {
+                    tab.classList.remove("active");
+                    tab.classList.add("hidden");
+                });
+
+                const selectedTab = document.getElementById(tabName);
+                selectedTab.classList.remove("hidden");
+
+                // Animate tab content
+                requestAnimationFrame(() => {
+                    selectedTab.classList.add("active");
+                    selectedTab.style.opacity = "1";
+                });
+
+                // Update tab buttons
+                Array.from(tablinks).forEach(link => {
+                    link.classList.remove("active", "bg-gradient-to-r", "from-purple-600", "to-pink-600", "text-white", "scale-105");
+                    link.classList.add("bg-gray-700", "text-gray-300");
+                });
+
+                evt.currentTarget.classList.add("active", "bg-gradient-to-r", "from-purple-600", "to-pink-600", "text-white", "scale-105");
+
+                // Remove loading indicator
+                loadingIndicator.remove();
+            }, 300);
+        }
+
+        // Enhanced search with highlighting
+        function filterContent() {
+            const input = document.getElementById("searchBox");
+            const filter = input.value.toLowerCase();
+            const elements = document.getElementsByClassName("searchable");
+
+            Array.from(elements).forEach(element => {
+                const text = element.textContent || element.innerText;
+                const match = text.toLowerCase().includes(filter);
+                element.style.display = match ? "" : "none";
+
+                if (match && filter.length > 0) {
+                    element.classList.add("bg-purple-900/30");
+                    element.style.transition = "background-color 0.3s ease";
+                } else {
+                    element.classList.remove("bg-purple-900/30");
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
