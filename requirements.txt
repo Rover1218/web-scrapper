@@ -1,5 +1,5 @@
 Flask==2.0.1
 beautifulsoup4==4.9.3
-requests==2.26.0
+requests==2.32.2
 validators==0.18.2
 pyld==2.0.3
